@@ -1,2 +1,2 @@
 # Data Structures and Algorithms
-In this repository, I will post my solutions to problems on algorithms and data structures.
+In this repository, I will push my solutions to problems related to algorithms and data structures.
