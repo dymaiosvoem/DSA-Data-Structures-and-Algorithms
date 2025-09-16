@@ -5,13 +5,9 @@
 
 class StackMax {
 public:
-	StackMax(size_t size) {
+	explicit StackMax(size_t size) {
 		stack_.reserve(size);
 		max_nums_.reserve(size);
-	}
-
-	bool IsEmpty() const {
-		return stack_.empty();
 	}
 
 	void push(int x) {
@@ -47,6 +43,10 @@ public:
 private:
 	std::vector<int> stack_;
 	std::vector<int> max_nums_;
+
+	bool IsEmpty() const {
+		return stack_.empty();
+	}
 };
 
 void Solution(size_t size) {
