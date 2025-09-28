@@ -28,7 +28,7 @@
 	Пусть количество команд - Q, тогда это будет то самое число, сколько раз мы должны будем взаимодествовать
 	с массивом. Операции по вставкам и удалении проходят за No Amortize O(1), так как память заверзирована и используются
 	операции [ ] для изменения массива.
-	Итог: O(N) + O(1) + O(1) + O(1) + O(1) = O(N)
+	Итог: O(Q) + O(1) + O(1) + O(1) + O(1) = O(Q)
 
 	-- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
 	Пусть размер массива - M, тогда затраты по памяти исходят от количества элементов хранящиеся в двусторонней
@@ -37,6 +37,7 @@
 */
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -46,22 +47,21 @@ public:
 		dequeue_.resize(max_size_queue, 0);
 	}
 
-	void push_back(int value) {
-		if (size_ == max_size_) {
-			PrintMaxElementDequeueError();
-			return;
+	bool push_back(int value) {
+		if (max_size_ == size_) {
+			return false;
 		}
 
 		dequeue_[tail_] = value;
 		++size_;
 
 		tail_ = (tail_ + 1) % max_size_;
+		return true;
 	}
 
-	void push_front(int value) {
-		if (size_ == max_size_) {
-			PrintMaxElementDequeueError();
-			return;
+	bool push_front(int value) {
+		if (max_size_ == size_) {
+			return false;
 		}
 
 		if (size_ == 0) {
@@ -73,33 +73,37 @@ public:
 		}
 
 		++size_;
+		return true;
 	}
 
-	void pop_front() {
+	std::optional<int> pop_front() {
 		if (size_ == 0) {
-			PrintEmptyDequeueError();
-			return;
+			return std::nullopt;
 		}
 
-		std::cout << dequeue_[head_] << '\n';
+		int remove_value = dequeue_[head_];
+		std::cout << remove_value << '\n';
 
 		dequeue_[head_] = NULL;
 		head_ = (head_ + 1) % max_size_;
 		--size_;
+
+		return remove_value;
 	}
 
-	void pop_back() {
+	std::optional<int> pop_back() {
 		if (size_ == 0) {
-			PrintEmptyDequeueError();
-			return;
+			return std::nullopt;
 		}
 
 		tail_ = (tail_ + max_size_ - 1) % max_size_;
 
-		std::cout << dequeue_[tail_] << '\n';
+		int remove_value = dequeue_[tail_];
+		std::cout << remove_value << '\n';
 
 		dequeue_[tail_] = NULL;
 		--size_;
+		return remove_value;
 	}
 
 private:
@@ -108,14 +112,6 @@ private:
 	size_t tail_;
 	size_t size_;
 	size_t max_size_;
-
-	static void PrintMaxElementDequeueError() {
-		std::cout << "error" << '\n';
-	}
-
-	static void PrintEmptyDequeueError() {
-		std::cout << "error" << '\n';
-	}
 };
 
 void Solution(size_t count_commands, size_t max_size_queue) {
@@ -130,16 +126,24 @@ void Solution(size_t count_commands, size_t max_size_queue) {
 			int num;
 			std::cin >> num;
 
-			dequeue.push_back(num);
+			if (!dequeue.push_back(num)) {
+				std::cout << "error" << '\n';
+			}
 		} else if (command == "push_front") {
 			int num;
 			std::cin >> num;
 
-			dequeue.push_front(num);
+			if (!dequeue.push_front(num)) {
+				std::cout << "error" << '\n';
+			}
 		} else if (command == "pop_back") {
-			dequeue.pop_back();
+			if (!dequeue.pop_back().has_value()) {
+				std::cout << "error" << '\n';
+			}
 		} else {
-			dequeue.pop_front();
+			if (!dequeue.pop_front().has_value()) {
+				std::cout << "error" << '\n';
+			}
 		}
 
 		++start;
