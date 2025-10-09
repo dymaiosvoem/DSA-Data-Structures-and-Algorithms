@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-bool compare_keys(const std::string& current_num, const std::string& prev_num) {
+bool compare_by_concat(const std::string& current_num, const std::string& prev_num) {
 	return current_num + prev_num > prev_num + current_num;
 }
 
