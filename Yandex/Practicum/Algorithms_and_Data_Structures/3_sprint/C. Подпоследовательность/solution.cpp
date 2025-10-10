@@ -4,6 +4,10 @@
 #include <vector>
 
 void Solution(std::string_view s, std::string_view t) {
+    /*
+        Time Complexity: O(s + t)
+        Memory Complexity: O(1)
+    */
     size_t i = 0, j = 0;
 
     while (i < s.size() && j < t.size()) {
