@@ -63,28 +63,24 @@ void QuickSortSolution(std::vector<size_t>& greed_children, std::vector<size_t>&
 
 void CountSortSolution(const std::vector<size_t>& greed_children, const std::vector<size_t>& size_cookies) {
 	/*
-		Time Complexity: O(G + C + S) G - greed_children, C - size_cookies, S - size
-		Memory Complexity: O(S)
+		Time Complexity: O(G + C + S) G - greed_children, C - size_cookies, S - freq_greed.size() && freq_cookies.size()
+		Memory Complexity: O(S) S - freq_greed.size() && freq_cookies.size()
 	*/
-	size_t max_value_greed = *std::max_element(greed_children.begin(), greed_children.end());
-	size_t max_value_size_cookies = *std::max_element(size_cookies.begin(), size_cookies.end());
-	size_t S = std::max(max_value_greed, max_value_size_cookies) + 1;
-
-	std::vector<size_t> sorted_greed(S), sorted_cookies(S);
+	std::vector<size_t> freq_greed(10001), freq_cookies(10001);
 
 	for (size_t i = 0; i < greed_children.size(); ++i) {
-		++sorted_greed[greed_children[i]];
+		++freq_greed[greed_children[i]];
 	}
 
 	for (size_t i = 0; i < size_cookies.size(); ++i) {
-		++sorted_cookies[size_cookies[i]];
+		++freq_cookies[size_cookies[i]];
 	}
 
 	size_t need = 0, result = 0;
 
 	for (size_t i = 0; i < S; ++i) {
-		need += sorted_greed[i];
-		size_t take = std::min(need, sorted_cookies[i]);
+		need += freq_greed[i];
+		size_t take = std::min(need, freq_cookies[i]);
 		result += take;
 		need -= take;
 	}
