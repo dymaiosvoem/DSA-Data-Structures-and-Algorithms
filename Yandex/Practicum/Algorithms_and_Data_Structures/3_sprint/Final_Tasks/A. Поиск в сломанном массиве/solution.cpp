@@ -1,12 +1,11 @@
 ﻿#include <vector>
 #include <cassert>
 
-/*
-    std::vector<int> arr_3 = { 1, 3, 4, 5, 7, 12, 19, 21, 100, 101 };
-    assert(3 == broken_search(arr_3, 5));
-*/
-
 int broken_search(const std::vector<int>& vec, int k) {
+    /*
+        Time Complexity: O(log n)
+        Memory Complexity: O(1)
+    */
     int left = 0, right = vec.size();
 
     while (left < right) {
@@ -16,10 +15,22 @@ int broken_search(const std::vector<int>& vec, int k) {
             return mid;
         }
 
-
+        if (vec[left] <= vec[mid]) {
+            if (vec[left] <= k && k < vec[mid]) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+        } else {
+            if (vec[mid] < k && k <= vec[right - 1]) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
     }
 
-    return (vec[left] == k ? left : -1);
+    return (left < vec.size() && vec[left] == k ? left : -1);
 }
 
 void test() {
