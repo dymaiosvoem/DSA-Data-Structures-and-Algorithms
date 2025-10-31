@@ -12,10 +12,35 @@ timofey 4 80
 
 
 pivot = alla 4 100;
-6 1000 gena | 4 100 alla ---------- false
-4 80 timofey | 4 100 alla --------- true
-2 90 gosha | 4 100 alla -----------
-2 90 rita | 4 100 alla ------------
+
+left = -4 100 alla
+
+-4 100 alla | -4 80 timofey
+right = -4 80 timofey
+
+timofey 4 80
+gena 6 1000
+gosha 2 90
+rita 2 90
+alla 4 100
+
+-6 1000 gena | -4 100 alla ------- true
+-2 90 gosha | -4 100 alla -------- false
+
+left = -2 90 gosha
+
+-4 100 alla | -2 90 rita --------- true
+-4 100 alla | -2 90 gosha -------- true
+-4 100 alla | -6 1000 gena ------- false
+right = -6 1000 gena
+
+timofey 4 80
+gena 6 1000
+gosha 2 90
+rita 2 90
+alla 4 100
+
+left = 2, right = 1
 */
 
 struct Participant {
@@ -29,10 +54,8 @@ bool compare_participants(const Participant& left, const Participant& right) {
         < std::make_tuple(-right.solved_tasks_, right.fine_, right.login_);
 }
 
-using Pair = std::pair<std::vector<Participant>, std::vector<Participant>>;
-
-std::pair<std::vector<Participant>, std::vector<Participant>> partition_in_place(std::vector<Participant>& participants, Participant pivot, bool (*cmp)(const Participant& left, const Participant& right)) {
-    size_t left = 0, right = participants.size() - 1;
+size_t partition_in_place(std::vector<Participant>& participants, size_t left, size_t right, bool (*cmp)(const Participant& left, const Participant& right)) {
+    Participant pivot = participants[left + rand() % (right - left + 1)];
 
     while (left < right) {
         while (cmp(participants[left], pivot)) {
@@ -44,31 +67,29 @@ std::pair<std::vector<Participant>, std::vector<Participant>> partition_in_place
         }
 
         if (left <= right) {
-            std::swap(participants[left].solved_tasks_, participants[right].solved_tasks_);
+            std::swap(participants[left], participants[right]);
             ++left;
             --right;
         }
     }
 
-    std::vector<Participant> left, right;
-
-    return std::make_pair(left, right);
+    return right;
 }
 
-std::vector<Participant> QuickSortInPlace(std::vector<Participant>& participants) {
-    if (participants.size() < 2) {
-        return participants;
+void QuickSort(std::vector<Participant>& participants, size_t left, size_t right) {
+    if (left >= right) {
+        return;
     }
 
-    auto pivot = participants[rand() % participants.size()];
-    partition_in_place(participants, pivot, compare_participants);
+    size_t i = partition_in_place(participants, left, right, compare_participants);
+    QuickSort(participants, left, i);
+
+    QuickSort(participants, i + 1, right);
 }
 
-void Solution(std::vector<Participant>& participants) {
-    auto result = QuickSortInPlace(participants);
-
-    for (auto r : result) {
-        std::cout << r.login_ << '\n';
+void PrintParticipants(const std::vector<Participant>& participants) {
+    for (size_t i = 0; i < participants.size(); ++i) {
+        std::cout << participants[i].login_ << '\n';
     }
 }
 
@@ -81,5 +102,9 @@ int main() {
         std::cin >> participants[i].login_ >> participants[i].solved_tasks_ >> participants[i].fine_;
     }
 
-    Solution(participants);
+    size_t left = 0, right = count_participants - 1;
+
+    QuickSort(participants, left, right);
+
+    PrintParticipants(participants);
 }
