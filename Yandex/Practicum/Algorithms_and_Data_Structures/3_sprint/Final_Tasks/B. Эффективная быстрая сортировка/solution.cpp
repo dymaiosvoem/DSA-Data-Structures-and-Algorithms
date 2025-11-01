@@ -41,6 +41,8 @@ rita 2 90
 alla 4 100
 
 left = 2, right = 1
+
+надо делать все in place, подумать над тем как брать pivot c left right диапозон
 */
 
 struct Participant {
