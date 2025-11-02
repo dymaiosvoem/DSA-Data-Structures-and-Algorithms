@@ -1,54 +1,13 @@
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
-/*
-alla 4 100
-gena 6 1000
-gosha 2 90
-rita 2 90
-timofey 4 80
-
-
-pivot = alla 4 100;
-
-left = -4 100 alla
-
--4 100 alla | -4 80 timofey
-right = -4 80 timofey
-
-timofey 4 80
-gena 6 1000
-gosha 2 90
-rita 2 90
-alla 4 100
-
--6 1000 gena | -4 100 alla ------- true
--2 90 gosha | -4 100 alla -------- false
-
-left = -2 90 gosha
-
--4 100 alla | -2 90 rita --------- true
--4 100 alla | -2 90 gosha -------- true
--4 100 alla | -6 1000 gena ------- false
-right = -6 1000 gena
-
-timofey 4 80
-gena 6 1000
-gosha 2 90
-rita 2 90
-alla 4 100
-
-left = 2, right = 1
-
-надо делать все in place, подумать над тем как брать pivot c left right диапозон
-*/
-
 struct Participant {
     std::string login_;
     int solved_tasks_;
-    size_t fine_;
+    int fine_;
 };
 
 bool compare_participants(const Participant& left, const Participant& right) {
@@ -56,43 +15,53 @@ bool compare_participants(const Participant& left, const Participant& right) {
         < std::make_tuple(-right.solved_tasks_, right.fine_, right.login_);
 }
 
-size_t partition_in_place(std::vector<Participant>& participants, size_t left, size_t right, bool (*cmp)(const Participant& left, const Participant& right)) {
-    Participant pivot = participants[left + rand() % (right - left + 1)];
-
-    while (left < right) {
-        while (cmp(participants[left], pivot)) {
-            ++left;
-        }
-
-        while (cmp(pivot, participants[right])) {
-            --right;
-        }
-
-        if (left <= right) {
-            std::swap(participants[left], participants[right]);
-            ++left;
-            --right;
-        }
-    }
-
-    return right;
-}
-
-void QuickSort(std::vector<Participant>& participants, size_t left, size_t right) {
+void partition_in_place(std::vector<Participant>& participants, int left, int right) {
     if (left >= right) {
         return;
     }
 
-    size_t i = partition_in_place(participants, left, right, compare_participants);
-    QuickSort(participants, left, i);
+    Participant pivot = participants[left + (rand() % (right - left + 1))];
+    int i = left, j = right;
 
-    QuickSort(participants, i + 1, right);
+    while (true) {
+        while (compare_participants(participants[i], pivot)) {
+            ++i;
+        }
+
+        while (compare_participants(pivot, participants[j])) {
+            --j;
+        }
+
+        if (i >= j) {
+            break;
+        }
+
+        std::swap(participants[i], participants[j]);
+        ++i;
+        --j;
+    }
+
+    partition_in_place(participants, left, j);
+    partition_in_place(participants, j + 1, right);
+}
+
+void QuickSortInPlace(std::vector<Participant>& participants) {
+    partition_in_place(participants, 0, participants.size() - 1);
 }
 
 void PrintParticipants(const std::vector<Participant>& participants) {
     for (size_t i = 0; i < participants.size(); ++i) {
         std::cout << participants[i].login_ << '\n';
     }
+}
+
+void Solution(std::vector<Participant>& participants) {
+    /*
+        Time Complexity: O(N log N); Worse: O(N^2)
+        Memory Complexity: O(1) + T(log N)
+    */
+    QuickSortInPlace(participants);
+    PrintParticipants(participants);
 }
 
 int main() {
@@ -104,9 +73,5 @@ int main() {
         std::cin >> participants[i].login_ >> participants[i].solved_tasks_ >> participants[i].fine_;
     }
 
-    size_t left = 0, right = count_participants - 1;
-
-    QuickSort(participants, left, right);
-
-    PrintParticipants(participants);
+    Solution(participants);
 }
