@@ -37,10 +37,10 @@
     Итог: O(S * log S); Worse: O(S^2)
 
     -- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
-    Пусть N - participants.size()
+    Пусть S - participants.size()
     Дополнительные данные, которые использую pivot, i, left, j, right
-    Также заполняется стек через рекурсию, при удачном pivot будет log N, в худшем N
-    Итог: O(1) + O(log N); Worse: O(1) + O(N)
+    Глубина стека: O(log S) при случайном выборе pivot, в худшем: O(S)
+    Итог: O(1) + O(log S); Worse: O(1) + O(S)
 */
 
 #include <algorithm>
