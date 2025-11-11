@@ -4,6 +4,10 @@
 #include <vector>
 
 void Solution(size_t n) {
+	/*
+		Time Complexity: O(N)
+		Memory Complextiry: O(N)
+	*/
 	std::unordered_set<std::string> clubs;
 	clubs.reserve(n);
 

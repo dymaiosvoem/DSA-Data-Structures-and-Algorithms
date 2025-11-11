@@ -11,6 +11,10 @@
 */
 
 void Solution(size_t n) {
+	/*
+		Time Complexity: O(N)
+		Memory Complexity: O(N)
+	*/
 	std::unordered_map<int, size_t> first(n + 1);
 	first[0] = 0;
 
