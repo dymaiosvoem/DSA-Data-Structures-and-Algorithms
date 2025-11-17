@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <algorithm>
+#include <iostream>
 #include <vector>
 
 void NaiveSolution(const std::vector<int>& points_on_chips, int k) {
@@ -20,9 +21,24 @@ void NaiveSolution(const std::vector<int>& points_on_chips, int k) {
 
 void SortSolution(const std::vector<int>& points_on_chips, int k) {
 	/*
-		Time Complexity:
-		Memory Complexity:
+		Time Complexity: O(N * log N)
+		Memory Complexity: O(1)
 	*/
+	std::sort(points_on_chips.begin(), points_on_chips.end());
+	size_t l = 0, r = points_on_chips.size() - 1;
+
+	while (l < r) {
+		int sum = points_on_chips[l] + points_on_chips[r];
+
+		if (sum == k) {
+			std::cout << points_on_chips[l] << ' ' << points_on_chips[r] << '\n';
+			return;
+		} else {
+			sum < k ? ++l : --r;
+		}
+	}
+
+	std::cout << "None" << '\n';
 }
 
 void UnorderedSetSolution(const std::vector<int>& points_on_chips, int k) {
@@ -45,7 +61,7 @@ int main() {
 	int k;
 	std::cin >> k;
 
-	NaiveSolution(points_on_chips, k);
+	//NaiveSolution(points_on_chips, k);
 	SortSolution(points_on_chips, k);
-	UnorderedSetSolution(points_on_chips, k);
+	//UnorderedSetSolution(points_on_chips, k);
 }
