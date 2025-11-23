@@ -17,7 +17,7 @@ struct Node {
 class HashTable {
 public:
 	HashTable() : p_(17) {
-		hash_table_.resize(131'072);
+		hash_table_.resize(1ull << p_, nullptr);
 	}
 
 	std::optional<int> get(int key) const {
@@ -39,53 +39,74 @@ public:
 		uint64_t bucket = HashKey(key);
 		Node* head = hash_table_[bucket];
 
-		Node* current = head;
-
-		if (!current) {
-			Node* new_node = new Node(key, value, nullptr);
-			hash_table_[bucket] = new_node;
+		if (!head) {
+			hash_table_[bucket] = new Node(key, value, nullptr);
 			return;
 		}
 
-		while (current != nullptr) {
-			if (current->key_ == key) {
-				current->value_ = value;
+		while (head != nullptr) {
+			if (head->key_ == key) {
+				head->value_ = value;
 				return;
 			}
 
-			if (!current->next_) {
-				Node* new_node = new Node(key, value, nullptr);
-				current->next_ = new_node;
+			if (!head->next_) {
+				head->next_ = new Node(key, value, nullptr);
 				return;
 			}
 
-			current = current->next_;
+			head = head->next_;
 		}
 	}
 
 	std::optional<int> delete_key(int key) {
 		uint64_t bucket = HashKey(key);
-		Node* head = hash_table_[bucket];
+		Node* prev = hash_table_[bucket];
 
-		Node* prev = head;
-
-		if (!prev->next_) {
-			if (prev->key_ == key) {
-				return prev->value_;
-			} else {
-				return std::nullopt;
-			}
+		if (!prev) {
+			return std::nullopt;
 		}
 
 		Node* next = prev->next_;
 
+		if (prev->key_ == key) {
+			int value = prev->value_;
+			hash_table_[bucket] = next;
+
+			delete prev;
+			return value;
+		}
+
 		while (next != nullptr) {
-			if (prev->key_ == key) {
-				int value = prev->value_;
+			if (next->key_ == key) {
+				int value = next->value_;
+				prev->next_ = next->next_;
+
+				delete next;
+				return value;
 			}
+
+			prev = next;
+			next = next->next_;
 		}
 
 		return std::nullopt;
+	}
+
+	~HashTable() {
+		for (size_t i = 0; i < hash_table_.size(); ++i) {
+			if (!hash_table_[i]) {
+				continue;
+			} else {
+				Node* head = hash_table_[i];
+
+				while (head != nullptr) {
+					Node* next = head->next_;
+					delete head;
+					head = next;
+				}
+			}
+		}
 	}
 
 private:
@@ -100,10 +121,19 @@ private:
 	}
 };
 
+void PrintOptional(const std::optional<int>& result) {
+	if (result.has_value()) {
+		std::cout << result.value() << '\n';
+	} else {
+		std::cout << "None" << '\n';
+	}
+}
+
 void Solution(size_t count_request) {
 	/*
-		Time Complexity:
-		Memory Complexity:
+		a = N / M = 10^5 / 2^17 = 0.76 (N - count_keys; M - count_buckets)
+		Time Complexity: get/put/delete_key working for: O(1) for hash + O(a) for chain = O(1 + a)
+		Memory Complexity: O(N + M)
 	*/
 	HashTable hash_table;
 	size_t start = 0;
@@ -116,25 +146,17 @@ void Solution(size_t count_request) {
 			int key;
 			std::cin >> key;
 
-			if (hash_table.get(key).has_value()) {
-				std::cout << hash_table.get(key).value() << '\n';
-			} else {
-				std::cout << "None" << '\n';
-			}
+			PrintOptional(hash_table.get(key));
 		} else if (request == "put") {
 			int key, value;
 			std::cin >> key >> value;
 
 			hash_table.put(key, value);
-		} else {
+		} else if (request == "delete") {
 			int key;
 			std::cin >> key;
 
-			if (hash_table.delete_key(key).has_value()) {
-				std::cout << hash_table.delete_key(key).value() << '\n';
-			} else {
-				std::cout << "None" << '\n';
-			}
+			PrintOptional(hash_table.delete_key(key));
 		}
 
 		++start;
