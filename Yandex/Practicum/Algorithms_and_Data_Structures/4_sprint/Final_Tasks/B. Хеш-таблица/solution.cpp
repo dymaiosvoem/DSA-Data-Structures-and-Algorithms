@@ -223,11 +223,6 @@ void PrintOptional(const std::optional<int>& result) {
 }
 
 void Solution(size_t count_request) {
-	/*
-		a = N / M = 10^5 / 2^17 = 0.76 (N - count_keys; M - count_buckets)
-		Time Complexity: get / put /delete_key working for: O(1) for hash + O(a) for chain = O(1 + a)
-		Memory Complexity: O(N + M)
-	*/
 	HashTable hash_table;
 	size_t start = 0;
 
