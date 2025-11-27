@@ -1,4 +1,75 @@
-﻿#include <algorithm>
+﻿/*
+	-- ПРИНЦИП РАБОТЫ --
+	Делаю парсинг документов в хеш-таблицу (std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq):
+	иду по документам по очереди:
+		1) паршу документ на слова; 
+		2) сохраняю частоту слов в документе;
+		3) переношу в хеш-таблицу, где:
+			-key(std::string): встречающееся слово, одинаковые слова будут складываться в тот же key;
+			-value(std::vector<IdAndFreq>): храню список пар (doc_id, freq) - сколько раз key встретилось в doc_id.
+
+	Обрабатываю запросы по очереди:
+		1) сохраняю уникальные слова запроса;
+		2) иду по уникальным словам и накапливаю для каждого документа пару (id, relevance), 
+		   где релевантность документа - сумма частот уникальных слов запроса в этом документе;
+		3) перекладываю накопленные значения в пары (id, relevance) в std::vector<std::pair<size_t, size_t>> result, 
+		   чтобы можно было отсортировать;
+		4) сортирую result:
+			-по убыванию релевантности;
+			-при равной релевантности - по возрастанию id.
+
+	Печатаю по отсортированному результату, только первые 5 самых релевантных документов.
+
+	-- ДОКАЗАТЕЛЬСТВО КОРРЕКТНОСТИ --
+	Корректность ParsingDocuments(std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq, size_t n):
+		-если слово встречается в документе с номером doc_id freq раз, то в word_id_freq[word] у нас будет ровно одна запись (doc_id, freq);
+		-если слово не встречается в документе doc_id, то такие пары в word_id_freq[word] не сохраняются.
+
+	Корректность ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq):
+		-сохраняются только уникальные слова запроса, поэтому если слово встречается несколько раз в запросе, 
+		 оно будет учитываться только 1 раз;
+		-для каждого уникального слова запроса я прохожу по всем парам (doc_id, freq) в word_id_freq[word] и 
+		 увеличиваю id_relevance[doc_id] на freq. поэтому после окончания цикла id_relevance[doc_id] равен сумме 
+		 частот всех уникальных слов запроса в документе doc_id;
+		-перекладываю пары (doc_id, relevance) в std::vector<std::pair<size_t, size_t>> result, после чего сортирую 
+		 их по убыванию релевантности / при равной релевантности - по возрастанию id;
+		-возвращаю result для PrintResult.
+
+	Корректность PrintResult(const std::vector<std::pair<size_t, size_t>>& result):
+		-функция выводит не более пяти самых релевантных документов отсортированного result.
+	
+	-- ВРЕМЕННАЯ СЛОЖНОСТЬ --
+	Пусть:
+		1) L_d - суммарное количество слов во всех документах; 
+		2) L_q - количество слов в одном запросе; 
+		3) P - количество пар (слово, документ) по которым прошелся за один запрос; 
+		4) R - количество документов с ненулевой релевантностью для одного запроса, R = result.size().
+
+	Тогда:
+		1) ParsingDocuments: O(L_d);
+		2) ProcessQuery: O(L_q) + O(P) + O(R * log R) - для одного запроса, R * log R из-за сортировки;
+		3) PrintResult: O(1), печатаю не более 5 документов.
+
+	Итог:
+		O(L_d + m * (L_q + P + R * log R)), где m - количество запросов.
+	
+	-- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
+	Пусть:
+		1) P_d - количество всех пар (word, IdAndFreq);
+		2) U_q - количество уникальных слов запроса;
+		3) I - количество пар (id, relevance);
+		4) S - количество отсортированных пар (id, relevance).
+
+	Тогда:
+		1) ParsingDocuments: O(P_d);
+		2) ProcessQuery: O(U_q) + O(I) + O(S);
+		3) PrintResult: O(1).
+
+	Итог:
+		O(P_d + U_q + I + S);
+*/
+
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -124,31 +195,6 @@ void PrintResult(const std::vector<std::pair<size_t, size_t>>& result) {
 }
 
 void Solution() {
-	/*
-		Time Complexity:   ParsingDocuments - O(L_d), L_d - length_documents
-
-						   ProcessQuery - O(L_q) + O(P) + O(R * log R),
-						   L_q - length_queries,
-						   P - количество (слово, документ) - пар, по которым прошелся
-						   R - количество документов с ненулевой релевантностью, size_of(result)
-
-						   PrintResult - O(1), печатаю не более 5 документов
-
-						   Result = O(L_q) + O(P) + O(R * log R);
-
-		Memory Complexity: ParsingDocuments: O(U_docs) + O(P_docs) = O(P_docs),
-						   U_docs - количество уникальных слов во всех документах
-						   P_docs - количество всех пар (слово, IdAndFreq)
-
-						   ProcessQuery - O(U_q) + O(I) + O(S),
-						   U_q - количество уникальных слов запроса;
-						   I - количество пар (id, relevance);
-						   S - количество отсортированных пар (id, relevance)
-
-						   PrintResult - O(1)
-
-						   Result = O(U_q) + O(I) + O(S);
-	*/
 	size_t n;
 	std::cin >> n;
 
