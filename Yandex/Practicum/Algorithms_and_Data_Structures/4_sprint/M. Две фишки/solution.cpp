@@ -1,6 +1,7 @@
 ﻿#include <algorithm>
 #include <iostream>
 #include <vector>
+#include <unordered_set>
 
 void NaiveSolution(const std::vector<int>& points_on_chips, int k) {
 	/*
@@ -19,9 +20,9 @@ void NaiveSolution(const std::vector<int>& points_on_chips, int k) {
 	std::cout << "None" << '\n';
 }
 
-void SortSolution(const std::vector<int>& points_on_chips, int k) {
+void SortSolution(std::vector<int>& points_on_chips, int k) {
 	/*
-		Time Complexity: O(N * log N)
+		Time Complexity: O(N * log N) - N(points_on_chips.size())
 		Memory Complexity: O(1)
 	*/
 	std::sort(points_on_chips.begin(), points_on_chips.end());
@@ -43,9 +44,26 @@ void SortSolution(const std::vector<int>& points_on_chips, int k) {
 
 void UnorderedSetSolution(const std::vector<int>& points_on_chips, int k) {
 	/*
-		Time Complexity:
-		Memory Complexity:
+		Time Complexity: O(N) - N(points_on_chips.size())
+		Memory Complexity: O(N)
 	*/
+	std::unordered_set<int> previous;
+	previous.reserve(points_on_chips.size());
+
+	for (size_t i = 0; i < points_on_chips.size(); ++i) {
+		int dif = k - points_on_chips[i];
+
+		auto it = previous.find(dif);
+
+		if (it == previous.end()) {
+			previous.insert(points_on_chips[i]);
+		} else {
+			std::cout << dif << ' ' << points_on_chips[i] << '\n';
+			return;
+		}
+	}
+
+	std::cout << "None" << '\n';
 }
 
 int main() {
@@ -61,7 +79,7 @@ int main() {
 	int k;
 	std::cin >> k;
 
-	//NaiveSolution(points_on_chips, k);
+	NaiveSolution(points_on_chips, k);
 	SortSolution(points_on_chips, k);
-	//UnorderedSetSolution(points_on_chips, k);
+	UnorderedSetSolution(points_on_chips, k);
 }
