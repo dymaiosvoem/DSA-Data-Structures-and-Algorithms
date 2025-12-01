@@ -46,17 +46,17 @@
 		4) L_q - количество слов в одном конкретном запросе.
 
 	Тогда:
-		1) ParsingDocuments: 
+		1) ParsingDocuments:
 			Максимальная длина одного документа ограничивается константой в 1000 символов, тогда парсинг всех документов
 			работает за O(n).
 		2) ProcessQuery(обработка одного запроса длины L_q):
 			-разбор строки запроса и сохранение уникальных слов: O(L_q);
-			-для каждого уникального слова не более L_q прохожу по всем парам (doc_id, freq). в худшем случае, слово 
+			-для каждого уникального слова не более L_q прохожу по всем парам (doc_id, freq). в худшем случае, слово
 			встречается во всех n документах (два вложенных цикла):
 				1) по уникальным словам запроса: O(L_q);
 				2) по документам для каждого уникального слова: O(n).
 				Итог: O(L_q * n).
-			-третьим циклом в result попадают не более n документов с ненулевой релевантностью: O(n). 
+			-третьим циклом в result попадают не более n документов с ненулевой релевантностью: O(n).
 			-далее сортирую result: O(n * log n).
 		3) PrintResult: O(1), печатаю не более 5 документов.
 
@@ -72,15 +72,15 @@
 
 	Тогда:
 		1) ParsingDocuments:
-			Для каждого слова из документа сохраняю пары (doc_id, freq), всего n документов, длина строки - константа 
+			Для каждого слова из документа сохраняю пары (doc_id, freq), всего n документов, длина строки - константа
 			в 1000 символов (ее не учитываю): O(n).
-		2) ProcessQuery:  
+		2) ProcessQuery:
 			-сохраняю уникальные слова, в худшем случае в запросе все слова будут уникальными: O(L_q);
 			-в id_relevance и result каждый doc_id может появиться не больше одного раза: O(n).
 
 			В худшем случае, когда запрос имеет максимальную длину L_q == L_q_max: O(L_q_max + n).
 		3) PrintResult: O(1).
- 
+
 	Итог: O(n + L_q_max + n) = O(n + L_q_max);
 */
 
@@ -154,34 +154,38 @@ std::unordered_set<std::string> ParsingQuery() {
 	return uniq_words;
 }
 
-std::vector<std::pair<size_t, size_t>> ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq) {
+std::vector<std::pair<size_t, size_t>> ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq, size_t n) {
 	std::unordered_set<std::string> uniq_words = ParsingQuery();
 
-	std::unordered_map<size_t, size_t> id_relevance;
+	std::vector<size_t> relevance(n + 1, 0);
 
 	for (const auto& word : uniq_words) {
 		auto it = word_id_freq.find(word);
 
 		if (it != word_id_freq.end()) {
 			for (const auto& [doc_id, freq] : it->second) {
-				id_relevance[doc_id] += freq;
+				relevance[doc_id] += freq;
 			}
 		}
 	}
 
 	std::vector<std::pair<size_t, size_t>> result;
-	result.reserve(id_relevance.size());
+	result.reserve(n);
 
-	for (const auto& [doc_id, relevance] : id_relevance) {
-		result.emplace_back(doc_id, relevance);
+	for (size_t doc_id = 1; doc_id <= n; ++doc_id) {
+		if (relevance[doc_id] > 0) {
+			result.emplace_back(doc_id, relevance[doc_id]);
+		}
 	}
 
-	std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {
-		if (left.second == right.second) {
-			return left.first < right.first;
+	const size_t to_move = std::min<size_t>(5, result.size());
+
+	std::partial_sort(result.begin(), result.begin() + to_move, result.end(), [](const auto& lhs, const auto& rhs) {
+		if (lhs.second == rhs.second) {
+			return lhs.first < rhs.first;
 		}
 
-		return left.second > right.second;
+		return lhs.second > rhs.second;
 		});
 
 	return result;
@@ -221,7 +225,7 @@ void Solution() {
 	std::cin >> m;
 
 	for (size_t j = 0; j < m; ++j) {
-		auto result = ProcessQuery(word_id_freq);
+		auto result = ProcessQuery(word_id_freq, n);
 
 		PrintResult(result);
 	}
