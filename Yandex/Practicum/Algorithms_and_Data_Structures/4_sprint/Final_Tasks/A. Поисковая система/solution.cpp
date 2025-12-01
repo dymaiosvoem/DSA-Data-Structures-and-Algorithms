@@ -10,33 +10,33 @@
 
 	Обрабатываю запросы по очереди:
 		1) сохраняю уникальные слова запроса;
-		2) иду по уникальным словам и накапливаю для каждого документа пару (id, relevance),
-		   где релевантность документа - сумма частот уникальных слов запроса в этом документе;
-		3) перекладываю накопленные значения в пары (id, relevance) в std::vector<std::pair<size_t, size_t>> result,
-		   чтобы можно было отсортировать;
-		4) сортирую result:
+		2) завожу массив id_relevance размера n + 1, где для каждого документа doc_id храню пару (doc_id, relevance),
+		   сначала relevance = 0;
+		3) для каждого уникального слова запроса прохожу по всем парам (doc_id, freq) в word_id_freq[word]
+		   и увеличиваю id_relevance[doc_id].second на freq, так я накапливаю релевантность документа;
+		4) частично сортирую id_relevance[1...n] с помощью std::partial_sort так, чтобы первые 5 элементов были:
 			-по убыванию релевантности;
-			-при равной релевантности - по возрастанию id.
+			-если релевантности документов совпадают, то по возрастанию их порядковых номеров в базе.
 
-	Печатаю по отсортированному результату, только первые 5 самых релевантных документов.
+	Печатаю по итоговому массиву id_relevance только первые 5 документов с ненулевой релевантностью.
 
 	-- ДОКАЗАТЕЛЬСТВО КОРРЕКТНОСТИ --
 	Корректность ParsingDocuments(std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq, size_t n):
 		-если слово встречается в документе с номером doc_id freq раз, то в word_id_freq[word] у нас будет ровно одна запись (doc_id, freq);
 		-если слово не встречается в документе doc_id, то такие пары в word_id_freq[word] не сохраняются.
 
-	Корректность ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq):
+	Корректность ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq, size_t n):
 		-сохраняются только уникальные слова запроса, поэтому если слово встречается несколько раз в запросе,
 		 оно будет учитываться только 1 раз;
 		-для каждого уникального слова запроса я прохожу по всем парам (doc_id, freq) в word_id_freq[word] и
-		 увеличиваю id_relevance[doc_id] на freq. поэтому после окончания цикла id_relevance[doc_id] равен сумме
+		 увеличиваю id_relevance[doc_id].second на freq. поэтому после окончания цикла id_relevance[doc_id].second равен сумме
 		 частот всех уникальных слов запроса в документе doc_id;
-		-перекладываю пары (doc_id, relevance) в std::vector<std::pair<size_t, size_t>> result, после чего сортирую
-		 их по убыванию релевантности / при равной релевантности - по возрастанию id;
-		-возвращаю result для PrintResult.
+		-std::partial_sort упорядочивает подмассив id_relevance[1...n] так:
+			1) по убыванию релевантности;
+			2) если релевантности документов совпадают, то по возрастанию их порядковых номеров в базе.
 
-	Корректность PrintResult(const std::vector<std::pair<size_t, size_t>>& result):
-		-функция выводит не более пяти самых релевантных документов отсортированного result.
+	Корректность PrintResult(const std::vector<std::pair<size_t, size_t>>& id_relevance, size_t n):
+		-функция выводит не более пяти самых релевантных документов.
 
 	-- ВРЕМЕННАЯ СЛОЖНОСТЬ --
 	Пусть:
@@ -51,18 +51,19 @@
 			работает за O(n).
 		2) ProcessQuery(обработка одного запроса длины L_q):
 			-разбор строки запроса и сохранение уникальных слов: O(L_q);
-			-для каждого уникального слова не более L_q прохожу по всем парам (doc_id, freq). в худшем случае, слово
-			встречается во всех n документах (два вложенных цикла):
-				1) по уникальным словам запроса: O(L_q);
-				2) по документам для каждого уникального слова: O(n).
-				Итог: O(L_q * n).
-			-третьим циклом в result попадают не более n документов с ненулевой релевантностью: O(n).
-			-далее сортирую result: O(n * log n).
+			-для каждого уникального слова запроса перебираю все документы, в которых это слово встречается,
+			 в худшем случае каждое из L_q слов запроса встречается во всех n документах, поэтому эта часть работает
+			 за: O(L_q * n);
+			-далее вызываю std::partial_sort по массиву из n документов для выбора 5 самых релевантных.
+			 так как k = 5 (константа), сложность сортировки: O(n).
+
+			Итог для обработки одного запроса: O(L_q * n).
 		3) PrintResult: O(1), печатаю не более 5 документов.
 
-	Итог для m запросов в худшем случае, когда каждый запрос имеет максимальную длину L_q == L_q_max: O(m * (L_q_max + L_q_max * n + n * log n)).
+	Итог для m запросов в худшем случае, когда каждый запрос имеет максимальную длину L_q == L_q_max:
+		O(m * (L_q_max * n)).
 
-	Общий итог: O(n + m * (L_q_max * n + n * log n)).
+	Общий итог: O(n + m * (L_q_max * n)).
 
 	-- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
 	Пусть:
@@ -76,7 +77,7 @@
 			в 1000 символов (ее не учитываю): O(n).
 		2) ProcessQuery:
 			-сохраняю уникальные слова, в худшем случае в запросе все слова будут уникальными: O(L_q);
-			-в id_relevance и result каждый doc_id может появиться не больше одного раза: O(n).
+			-завожу массив id_relevance размера n + 1, где для каждого doc_id храню пару (doc_id, relevance): O(n).
 
 			В худшем случае, когда запрос имеет максимальную длину L_q == L_q_max: O(L_q_max + n).
 		3) PrintResult: O(1).
@@ -157,30 +158,29 @@ std::unordered_set<std::string> ParsingQuery() {
 std::vector<std::pair<size_t, size_t>> ProcessQuery(const std::unordered_map<std::string, std::vector<IdAndFreq>>& word_id_freq, size_t n) {
 	std::unordered_set<std::string> uniq_words = ParsingQuery();
 
-	std::vector<size_t> relevance(n + 1, 0);
+	std::vector<std::pair<size_t, size_t>> id_relevance(n + 1);
+	for (size_t doc_id = 1; doc_id <= n; ++doc_id) {
+		id_relevance[doc_id].first = doc_id;
+		id_relevance[doc_id].second = 0;
+	}
 
 	for (const auto& word : uniq_words) {
 		auto it = word_id_freq.find(word);
 
 		if (it != word_id_freq.end()) {
 			for (const auto& [doc_id, freq] : it->second) {
-				relevance[doc_id] += freq;
+				id_relevance[doc_id].second += freq;
 			}
 		}
 	}
 
-	std::vector<std::pair<size_t, size_t>> result;
-	result.reserve(n);
+	const size_t to_move = std::min<size_t>(5, n);
 
-	for (size_t doc_id = 1; doc_id <= n; ++doc_id) {
-		if (relevance[doc_id] > 0) {
-			result.emplace_back(doc_id, relevance[doc_id]);
-		}
-	}
+	auto first = id_relevance.begin() + 1;
+	auto middle = first + to_move;
+	auto last = id_relevance.end();
 
-	const size_t to_move = std::min<size_t>(5, result.size());
-
-	std::partial_sort(result.begin(), result.begin() + to_move, result.end(), [](const auto& lhs, const auto& rhs) {
+	std::partial_sort(first, middle, last, [](const auto& lhs, const auto& rhs) {
 		if (lhs.second == rhs.second) {
 			return lhs.first < rhs.first;
 		}
@@ -188,26 +188,26 @@ std::vector<std::pair<size_t, size_t>> ProcessQuery(const std::unordered_map<std
 		return lhs.second > rhs.second;
 		});
 
-	return result;
+	return id_relevance;
 }
 
-void PrintResult(const std::vector<std::pair<size_t, size_t>>& result) {
-	size_t printed = 0;
+void PrintResult(const std::vector<std::pair<size_t, size_t>>& id_relevance, size_t n) {
+	size_t end_printing = std::min<size_t>(5, n);
 	bool space = false;
 
-	for (const auto& [key, value] : result) {
-		if (printed == 5) {
+	auto it = id_relevance.begin() + 1;
+
+	for (size_t i = 0; i < end_printing; ++i, ++it) {
+		if (it->second == 0) {
 			break;
 		}
 
 		if (space) {
-			std::cout << ' ' << key;
+			std::cout << ' ' << it->first;
 		} else {
-			std::cout << key;
+			std::cout << it->first;
 			space = true;
 		}
-
-		++printed;
 	}
 
 	std::cout << '\n';
@@ -227,7 +227,7 @@ void Solution() {
 	for (size_t j = 0; j < m; ++j) {
 		auto result = ProcessQuery(word_id_freq, n);
 
-		PrintResult(result);
+		PrintResult(result, n);
 	}
 }
 
