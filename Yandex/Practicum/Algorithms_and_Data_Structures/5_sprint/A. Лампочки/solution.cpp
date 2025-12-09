@@ -10,29 +10,27 @@ struct Node {
 #ifdef REMOTE_JUDGE
 #include "solution_tree.h"
 #endif
-#include <cmath>
-#include <iostream>
+#include <algorithm>
 #include <cassert>
-#include <stack>
 
 using namespace std;
 
-
 int Solution(const Node* root) {
-    const Node* current = root;
-    int result = root->value;
+    /*
+        Time Complexity: O(N), N - count vertexes
+        Memory Complexity: O(H), H - height of the tree
+    */
+    int value = root->value;
 
-    std::stack<const Node*> nodes;
-    nodes.push(root);
-
-    while (current->left) {
-        nodes.push(current->left);
-        current = nodes.top();
+    if (root->left != nullptr) {
+        value = std::max(value, Solution(root->left));
     }
 
+    if (root->right != nullptr) {
+        value = std::max(value, Solution(root->right));
+    }
 
-
-    return result;
+    return value;
 }
 
 #ifndef REMOTE_JUDGE
