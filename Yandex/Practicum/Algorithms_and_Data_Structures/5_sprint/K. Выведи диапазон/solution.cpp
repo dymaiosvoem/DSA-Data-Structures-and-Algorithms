@@ -10,18 +10,34 @@ struct Node {
 #ifdef REMOTE_JUDGE
 #include "solution.h"
 #endif
-#include <cmath>
 #include <iostream>
-#include <cassert>
 
 using namespace std;
 
+void DepthFirstSearch(const Node* root, int l, int r) {
+    if (root == nullptr) {
+        return;
+    }
 
-using namespace std;
+    if (l <= root->value && root->left != nullptr) {
+        DepthFirstSearch(root->left, l, r);
+    }
+
+    if (l <= root->value && root->value <= r) {
+        std::cout << root->value << '\n';
+    }
+
+    if (root->value <= r && root->right != nullptr) {
+        DepthFirstSearch(root->right, l, r);
+    }
+}
 
 void print_range(Node* root, int l, int r) {
-    // Your code
-    // “ヽ(´▽｀)ノ”
+    /*
+        Time Complexity: O(H + k), H - height of the tree, k - count elements [l, r]
+        Memory Complexity: O(H)
+    */
+    DepthFirstSearch(root, l, r);
 }
 
 #ifndef REMOTE_JUDGE
