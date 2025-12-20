@@ -21,39 +21,45 @@ int getSize(Node* node) {
 }
 
 std::pair<Node*, Node*> split(Node* root, int k) {
+    /*
+        Time Complexity: O(H), H - height of the tree
+        Memory Complexity: O(H), recursion stack
+    */
     if (root == nullptr) {
-        return std::pair(nullptr, nullptr);
-    }
-
-    if (k == 0) {
-        return std::pair(nullptr, root);
+        return { nullptr, nullptr };
+    } else if (k == 0) {
+        return { nullptr, root };
     } else if (k == getSize(root)) {
-        return std::pair(root, nullptr);
+        return { root, nullptr };
     }
 
-    std::pair<Node*, Node*> BST;
     int leftSize = (root->left == nullptr) ? 0 : getSize(root->left);
 
-    if (leftSize >= k) {
-        BST = split(root->left, k);
+    if (k <= leftSize) {
+        auto [A_left, B_right] = split(root->left, k);
 
-        root->left = BST.second;
+        root->left = B_right;
         root->size = 1 + getSize(root->left) + getSize(root->right);
 
-        return std::pair(BST.first, root);
-    } else if (leftSize + 1 == k) {
+        return { A_left, root };
+
+    } else if (k == leftSize + 1) {
         Node* right_node = root->right;
-        root->right = nullptr;
 
+        root->right = nullptr;
         root->size = 1 + getSize(root->left) + getSize(root->right);
 
-        BST = { root, right_node };
+        return { root, right_node };
+    } else if (k > leftSize + 1) {
+        auto [A_right, B] = split(root->right, k - (leftSize + 1));
 
-        return BST;
-    } else if (leftSize + 1 < k) {
+        root->right = A_right;
+        root->size = 1 + getSize(root->left) + getSize(root->right);
 
+        return { root, B };
     }
 
+    return { nullptr, nullptr };
 }
 
 #ifndef REMOTE_JUDGE
