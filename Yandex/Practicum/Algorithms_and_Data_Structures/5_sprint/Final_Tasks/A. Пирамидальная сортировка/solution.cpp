@@ -14,16 +14,16 @@ struct Participant {
 		fine_(fine) {
 	}
 
-	std::string login_;
-	int solved_tasks_;
-	int fine_;
+	std::string login_ = {};
+	int solved_tasks_ = 0;
+	int fine_ = 0;
 };
 
 class Heap {
 public:
-	Heap(size_t size) {
+	explicit Heap(size_t size) {
 		heap_.reserve(size + 1);
-		heap_.push_back(Participant{});
+		heap_.push_back(Participant());
 	}
 
 	void push(const Participant& participant) {
@@ -58,12 +58,12 @@ public:
 private:
 	std::vector<Participant> heap_;
 
-	bool BetterParticipant(const Participant& a, const Participant& b) const noexcept {
+	bool BetterParticipant(const Participant& a, const Participant& b) const {
 		return std::make_tuple(-a.solved_tasks_, a.fine_, a.login_) <
 			std::make_tuple(-b.solved_tasks_, b.fine_, b.login_);
 	}
 
-	void SiftUp(size_t index) noexcept {
+	void SiftUp(size_t index) {
 		if (index == 1) {
 			return;
 		}
@@ -76,7 +76,7 @@ private:
 		}
 	}
 
-	void SiftDown(size_t index) noexcept {
+	void SiftDown(size_t index) {
 		size_t left = index * 2;
 		size_t right = index * 2 + 1;
 
