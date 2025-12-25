@@ -2,7 +2,7 @@
 	-- ПРИНЦИП РАБОТЫ --
 	На вход подаются login, solved_tasks, fine. Храню все данные об участнике в структуре Participant.
 
-	Когда складываю информацию об участниках в кучу, делаю просеивание вверх, сравниваю добавленного участника с его родителем 
+	Когда складываю информацию об участниках в кучу, делаю просеивание вверх, сравниваю добавленного участника с его родителем
 	(меняю их местами, если добавленный участник лучше родителя и продолжаю дальше рекурсивно, пока index != 1 и добавленный участник
 	лучше родителя).
 
@@ -12,7 +12,7 @@
 		3) если же и штрафы совпадают, то первым будет тот, у которого логин идет раньше в алфавитном порядке.
 
 	Следующий этап - сортировка, я достаю лучшего участника из кучи и кладу его в sorted_heap, на его место в куче ставлю последнего
-	участника и делаю просеивание вниз, чтобы сохранить свойство кучи с максимальным приоритетом. Делаю так до тех пор, пока 
+	участника и делаю просеивание вниз, чтобы сохранить свойство кучи с максимальным приоритетом. Делаю так до тех пор, пока
 	heap_.size() > 1.
 
 	На выходе получается отсортированный массив, вывожу login каждого участника.
@@ -29,9 +29,9 @@
 			После завершения просеивания вверх инвариант выполняется для всей кучи.
 
 		2) Participant pop_max()
-			-достаю из кучи участника с максимальным приоритетом, на его место переношу самого последнего участника из кучи, 
+			-достаю из кучи участника с максимальным приоритетом, на его место переношу самого последнего участника из кучи,
 			удаляю последний элемент, так как перенес его в корень;
-			-при просеивании вниз выбираю лучшего из детей и меняю местами, если корень хуже этого ребенка, 
+			-при просеивании вниз выбираю лучшего из детей и меняю местами, если корень хуже этого ребенка,
 			тем самым восстанавливаю инвариант в текущей вершине;
 			-когда обменивать нечего или дошел до листа, значит инвариант восстановлен.
 
@@ -66,7 +66,7 @@
 	-- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
 	В каждом методе использую дополнительные переменные для выбора индексов: O(1).
 
-	Только в методе sort() использую вспомогательную структуру (std::vector<Participant> sorted_heap), для хранения элементов 
+	Только в методе sort() использую вспомогательную структуру (std::vector<Participant> sorted_heap), для хранения элементов
 	кучи в отсортированном порядке:
 		-heap_ хранит: O(N);
 		-sorted_heap: O(N).
@@ -104,22 +104,15 @@ public:
 
 	void push(const Participant& participant) {
 		heap_.push_back(participant);
-		size_t index = heap_.size() - 1;
-		SiftUp(index);
-	}
-
-	Participant pop_max() {
-		assert(heap_.size() > 1);
-
-		auto better_participant = heap_[1];
-		heap_[1] = heap_[heap_.size() - 1];
-		heap_.pop_back();
-		SiftDown(1);
-
-		return better_participant;
 	}
 
 	std::vector<Participant> sort() {
+		if (heap_.size() <= 1) {
+			return {};
+		}
+
+		Heapify();
+
 		std::vector<Participant> sorted_heap;
 		sorted_heap.reserve(heap_.size() - 1);
 
@@ -139,36 +132,48 @@ private:
 			std::make_tuple(-b.solved_tasks_, b.fine_, b.login_);
 	}
 
-	void SiftUp(size_t index) {
-		if (index == 1) {
-			return;
-		}
+	void Heapify() {
+		size_t start = (heap_.size() - 1) / 2;
 
-		size_t parent_index = index / 2;
+		while (start > 0) {
+			SiftDown(start);
 
-		if (BetterParticipant(heap_[index], heap_[parent_index])) {
-			std::swap(heap_[index], heap_[parent_index]);
-			SiftUp(parent_index);
+			--start;
 		}
 	}
 
 	void SiftDown(size_t index) {
-		size_t left = index * 2;
-		size_t right = index * 2 + 1;
+		while (true) {
+			size_t left = index * 2;
+			size_t right = index * 2 + 1;
 
-		if (left >= heap_.size()) {
-			return;
-		}
+			if (left >= heap_.size()) {
+				break;
+			}
 
-		size_t highest_priority = left;
-		if (right < heap_.size() && BetterParticipant(heap_[right], heap_[left])) {
-			highest_priority = right;
-		}
+			size_t highest_priority = left;
+			if (right < heap_.size() && BetterParticipant(heap_[right], heap_[left])) {
+				highest_priority = right;
+			}
 
-		if (BetterParticipant(heap_[highest_priority], heap_[index])) {
-			std::swap(heap_[highest_priority], heap_[index]);
-			SiftDown(highest_priority);
+			if (BetterParticipant(heap_[highest_priority], heap_[index])) {
+				std::swap(heap_[highest_priority], heap_[index]);
+				index = highest_priority;
+			} else {
+				break;
+			}
 		}
+	}
+
+	Participant pop_max() {
+		assert(heap_.size() > 1);
+
+		auto better_participant = heap_[1];
+		heap_[1] = heap_[heap_.size() - 1];
+		heap_.pop_back();
+		SiftDown(1);
+
+		return better_participant;
 	}
 };
 
