@@ -6,18 +6,24 @@
 #endif
 
 int siftUp(std::vector<int>& heap, int idx) {
-    if (idx == 1) {
-        return 1;
+    /*
+        Time Complexity: O(log N)
+        Memory Complexity: O(1)
+    */
+    while (true) {
+        if (idx == 1) {
+            return 1;
+        }
+
+        int parent_idx = idx / 2;
+
+        if (heap[idx] > heap[parent_idx]) {
+            std::swap(heap[idx], heap[parent_idx]);
+            idx = parent_idx;
+        } else {
+            return idx;
+        }
     }
-
-    int parent_idx = idx / 2;
-
-    if (heap[idx] > heap[parent_idx]) {
-        std::swap(heap[idx], heap[parent_idx]);
-        idx = siftUp(heap, parent_idx);
-    }
-
-    return idx;
 }
 
 #ifndef REMOTE_JUDGE
