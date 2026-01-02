@@ -16,32 +16,31 @@ struct VertexInfo {
 	bool exiting_ = false;
 };
 
-std::vector<size_t> DFS(std::vector<std::vector<size_t>>& adjacency_list, size_t starting_vertex) {
+std::vector<size_t> DFS(const std::vector<std::vector<size_t>>& adjacency_list, size_t starting_vertex) {
 	std::vector<size_t> result;
-	result.reserve(adjacency_list.size());
+	result.reserve(adjacency_list.size() - 1);
 
 	std::vector<Color> color(adjacency_list.size(), Color::WHITE);
 
 	std::stack<VertexInfo> stack;
-	color[starting_vertex] = Color::GREY;
 	stack.push(VertexInfo(starting_vertex, false));
 
 	while (!stack.empty()) {
 		auto current = stack.top();
 		stack.pop();
 
-		if (current.exiting_) {
+		if (color[current.v_] == Color::GREY && current.exiting_) {
 			color[current.v_] = Color::BLACK;
-			continue;
-		}
+		} else if (color[current.v_] == Color::WHITE && !current.exiting_) {
+			color[current.v_] = Color::GREY;
+			stack.push(VertexInfo(current.v_, true));
 
-		result.push_back(current.v_);
-		stack.push(VertexInfo(current.v_, true));
+			result.push_back(current.v_);
 
-		for (auto& w : adjacency_list[current.v_]) {
-			if (color[w] == Color::WHITE) {
-				color[w] = Color::GREY;
-				stack.push(VertexInfo(w, false));
+			for (auto vertex : adjacency_list[current.v_]) {
+				if (color[vertex] == Color::WHITE) {
+					stack.push(VertexInfo(vertex, false));
+				}
 			}
 		}
 	}
@@ -57,6 +56,8 @@ void PrintResult(std::vector<size_t>& result) {
 			std::cout << result[i];
 		}
 	}
+
+	std::cout << '\n';
 }
 
 void Solution(size_t vertices, size_t edges) {
