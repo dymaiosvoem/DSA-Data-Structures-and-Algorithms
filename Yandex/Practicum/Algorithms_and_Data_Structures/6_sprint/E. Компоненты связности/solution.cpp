@@ -3,115 +3,117 @@
 #include <stack>
 #include <vector>
 
-/*
-	Подумать над архитектурой 
-
-	struct GraphContext {
-		explicit GraphContext(size_t size)
-			: adjacency_list_(size),
-			comp_id(size, -1) {
-		}
-
-		std::vector<std::vector<size_t>> adjacency_list_;
-		std::vector<int> comp_id;
-	};
-
-	struct ComponentsContext {
-		ComponentsContext()  {
-			offsets_.push_back(0);
-		}
-
-		std::vector<size_t> flat_;
-		std::vector<size_t> offsets_;
-	};
-*/
-
-struct ComponentContext {
-	explicit ComponentContext(size_t size)
+struct GraphContext {
+	explicit GraphContext(size_t size)
 		: adjacency_list_(size),
-		components_list_(size),
-		colors_(size, -1) {
+		components_id_(size, -1) {
 	}
 
 	std::vector<std::vector<size_t>> adjacency_list_;
-	std::vector<std::vector<size_t>> components_list_;
-	std::vector<int> colors_;
-	int component_count = 1;
+	std::vector<int> components_id_;
 };
 
-void CalculateConnectivityComponent(ComponentContext& component_context, size_t vertex) {
+struct ComponentsContext {
+	explicit ComponentsContext(size_t size) {
+		flat_.reserve(size);
+		offsets_.reserve(size);
+		offsets_.push_back(0);
+	}
+
+	void CloseComponent() {
+		offsets_.push_back(flat_.size());
+	}
+
+	size_t GetComponentsCount() const {
+		return offsets_.size() > 1 ? offsets_.size() - 1 : 0;
+	}
+
+	void PrintSortedComponents() {
+		const size_t components_count = GetComponentsCount();
+
+		std::cout << components_count << '\n';
+
+		if (components_count > 0) {
+			size_t component_idx = 0;
+			bool space = false;
+
+			while (component_idx + 1 < offsets_.size()) {
+				size_t begin = offsets_[component_idx];
+				size_t end = offsets_[component_idx + 1];
+
+				std::sort(flat_.begin() + begin, flat_.begin() + end);
+
+				for (size_t i = begin; i < end; ++i) {
+					if (space) {
+						std::cout << ' ' << flat_[i];
+					} else {
+						std::cout << flat_[i];
+
+						space = true;
+					}
+				}
+
+				std::cout << '\n';
+
+				space = false;
+				++component_idx;
+			}
+		}
+	}
+
+	std::vector<size_t> flat_;
+	std::vector<size_t> offsets_;
+};
+
+void CalculateConnectivityComponent(GraphContext& graph_context, ComponentsContext& component_context, size_t vertex) {
 	std::stack<size_t> stack;
 	stack.push(vertex);
+
+	const size_t component_number = component_context.GetComponentsCount();
 
 	while (!stack.empty()) {
 		auto current = stack.top();
 		stack.pop();
 
-		if (component_context.colors_[current] == -1) {
-			component_context.colors_[current] = component_context.component_count;
-			component_context.components_list_[component_context.component_count].push_back(current);
+		if (graph_context.components_id_[current] == -1) {
+			component_context.flat_.push_back(current);
+			graph_context.components_id_[current] = component_number;
 
-			for (auto vertex : component_context.adjacency_list_[current]) {
-				if (component_context.colors_[vertex] == -1) {
-					stack.push(vertex);
+			for (auto v : graph_context.adjacency_list_[current]) {
+				if (graph_context.components_id_[v] == -1) {
+					stack.push(v);
 				}
 			}
 		}
 	}
 
-	++component_context.component_count;
-}
-
-void SortAndPrintComponents(ComponentContext& component_context) {
-	size_t component_count = component_context.component_count - 1;
-	bool space = false;
-
-	std::cout << component_count << '\n';
-
-	for (size_t component = 1; component <= component_count; ++component) {
-
-		std::sort(component_context.components_list_[component].begin(), component_context.components_list_[component].end(),
-			[](const size_t lhs, const size_t rhs) {
-				return lhs < rhs;
-			});
-
-		for (size_t idx = 0; idx < component_context.components_list_[component].size(); ++idx) {
-			if (space) {
-				std::cout << ' ' << component_context.components_list_[component][idx];
-			} else {
-				std::cout << component_context.components_list_[component][idx];
-
-				space = true;
-			}
-		}
-
-		space = false;
-		std::cout << '\n';
-	}
+	component_context.CloseComponent();
 }
 
 void Solution(size_t vertices, size_t edges) {
 	/*
-		Time Complexity:
-		Memory Complexity:
+		Time Complexity: O(|V| + |E| + |V| log |V|) - DFS + сортировка вершин внутри компоненты
+		Memory Complexity: O(|V| + |E|) garph + components_id_ + flat_ + offsets_
 	*/
-	ComponentContext component_context(vertices + 1);
+	GraphContext graph_context(vertices + 1);
 
 	for (size_t edge = 0; edge < edges; ++edge) {
 		size_t source, destination;
 		std::cin >> source >> destination;
 
-		component_context.adjacency_list_[source].push_back(destination);
-		component_context.adjacency_list_[destination].push_back(source);
+		graph_context.adjacency_list_[source].push_back(destination);
+		graph_context.adjacency_list_[destination].push_back(source);
 	}
 
+	ComponentsContext component_context(vertices + 1);
+
 	for (size_t vertex = 1; vertex <= vertices; ++vertex) {
-		if (component_context.colors_[vertex] == -1) {
-			CalculateConnectivityComponent(component_context, vertex);
+		if (graph_context.components_id_[vertex] == -1) {
+			CalculateConnectivityComponent(graph_context, component_context, vertex);
 		}
 	}
 
-	SortAndPrintComponents(component_context);
+	component_context.PrintSortedComponents();
 }
 
 int main() {
