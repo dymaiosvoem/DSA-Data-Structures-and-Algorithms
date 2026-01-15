@@ -10,6 +10,7 @@
 */
 
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <queue>
 #include <vector>
@@ -23,6 +24,12 @@ struct IslandContext {
 
 	bool IsVisited(size_t id) const {
 		return visited_[id];
+	}
+
+	size_t CountId(int columns, int x, int y) const {
+		size_t id = static_cast<size_t>(y * columns + x);
+
+		return id;
 	}
 
 	std::vector<bool> visited_;
@@ -46,7 +53,7 @@ void BFS(IslandContext& island_context, const std::vector<std::vector<int>>& fie
 
 	queue.push(Coordinates(x, y));
 
-	size_t current_id = static_cast<size_t>((y - 1) * (field[y].size() - 1) + x);
+	size_t current_id = island_context.CountId((int)field[y].size() - 1, x, y - 1);
 	island_context.visited_[current_id] = true;
 
 	while (!queue.empty()) {
@@ -55,45 +62,39 @@ void BFS(IslandContext& island_context, const std::vector<std::vector<int>>& fie
 
 		++island_size;
 
+		static const std::array<Coordinates, 4> dir = {
+			Coordinates(-1, 0),
+			Coordinates(1, 0),
+			Coordinates(0, -1),
+			Coordinates(0, 1)
+		};
 
-		std::vector<Coordinates> neighbors = {
-			Coordinates(current.x_ - 1, current.y_),
-			Coordinates(current.x_ + 1, current.y_),
-			Coordinates(current.x_, current.y_ - 1),
-			Coordinates(current.x_, current.y_ + 1) };
+		for (size_t dir_idx = 0; dir_idx < dir.size(); ++dir_idx) {
+			int nx = current.x_ + dir[dir_idx].x_;
+			int ny = current.y_ + dir[dir_idx].y_;
 
-		for (size_t idx = 0; idx < neighbors.size(); ++idx) {
+			if (ny > 0 && ny < (int)field.size() &&
+				nx > 0 && nx < (int)field[ny].size() &&
+				field[ny][nx] != 0) {
 
+				size_t id = island_context.CountId((int)field[ny].size() - 1, nx, ny - 1);
+
+				if (!island_context.IsVisited(id)) {
+					queue.push(Coordinates(nx, ny));
+
+					island_context.visited_[id] = true;
+				}
+			}
 		}
-
-		/*if (current.x_ - 1 > 0 && field[current.y_][current.x_ - 1] != 0 && !island_context.IsVisited((current.y_ - 1)* (field[current.y_].size() - 1) + current.x_ - 1)) {
-			queue.push(Coordinates(current.x_ - 1, current.y_));
-			island_context.visited_[(current.y_ - 1) * (field[current.y_].size() - 1) + current.x_ - 1] = true;
-		}
-
-		if (current.x_ + 1 < field[current.y_].size() && field[current.y_][current.x_ + 1] != 0 && !island_context.IsVisited((current.y_ - 1) * (field[current.y_].size() - 1) + current.x_ + 1)) {
-			queue.push(Coordinates(current.x_ + 1, current.y_));
-			island_context.visited_[(current.y_ - 1) * (field[current.y_].size() - 1) + current.x_ + 1] = true;
-		}
-
-		if (current.y_ - 1 > 0 && field[current.y_ - 1][current.x_] != 0 && !island_context.IsVisited((current.y_ - 2) * (field[current.y_].size() - 1) + current.x_)) {
-			queue.push(Coordinates(current.x_, current.y_ - 1));
-			island_context.visited_[(current.y_ - 2) * (field[current.y_].size() - 1) + current.x_] = true;
-		}
-
-		if (current.y_ + 1 < field.size() && field[current.y_ + 1][current.x_] != 0 && !island_context.IsVisited(current.y_ * (field[current.y_].size() - 1) + current.x_)) {
-			queue.push(Coordinates(current.x_, current.y_ + 1));
-			island_context.visited_[current.y_ * (field[current.y_].size() - 1) + current.x_] = true;
-		}*/
 	}
 
 	island_context.max_island_size_ = std::max(island_size, island_context.max_island_size_);
 }
 
 std::pair<size_t, size_t> FindIslands(IslandContext& island_context, const std::vector<std::vector<int>>& field) {
-	for (int y = 1; y < field.size(); ++y) {
-		for (int x = 1; x < field[y].size(); ++x) {
-			size_t id = static_cast<size_t>((y - 1) * (field[y].size() - 1) + x);
+	for (int y = 1; y < (int)field.size(); ++y) {
+		for (int x = 1; x < (int)field[y].size(); ++x) {
+			size_t id = island_context.CountId((int)field[y].size() - 1, x, y - 1);
 
 			if (field[y][x] == 0 || island_context.visited_[id]) {
 				continue;
