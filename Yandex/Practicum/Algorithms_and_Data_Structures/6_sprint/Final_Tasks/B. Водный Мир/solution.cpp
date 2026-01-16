@@ -1,12 +1,43 @@
 ﻿/*
 	-- ПРИНЦИП РАБОТЫ --
+	Храню матрицу размером (rows + 1) х (columns + 1). Реальные границы [1, rows] и [1, columns].
+
+	Обхожу все клетки двойным циклом, когда встречаю землю, а не воду, то помечаю землю водой и делаю поиск в ширину.
+	При обходе в ширину, если в реальных границах матрицы соседние клетки (Coordinates(-1, 0), Coordinates(1, 0), Coordinates(0, -1),
+	Coordinates(0, 1)) клетки земля, кладу в queue и помечаю их водой для дальнейшей обработки и поиска их соседей. Поиск в ширину
+	работает, пока !queue.empty(), а сам алгоритм поиска островов, пока не обойду все клетки.
+
+	В конце получаю пару [number_islands, max_island_size] и вывожу ее.
 
 	-- ДОКАЗАТЕЛЬСТВО КОРРЕКТНОСТИ --
+	Инвариант поиска островов: как только клетка земли добавляется в queue BFS, она помечается водой. поэтому каждая клетка земли может
+	быть добавлена и обработана не более одного раза.
+
+	функции:
+		1) std::pair<size_t, size_t> FindIslands(...): перебирает все клетки матрицы в реальных ее границах.
+			1. если клетка вода, то она не может быть началом нового острова;
+			2. если клетка земля, то она становится началом нового острова.
+
+		2) void BFS(...): BFS берет клетку из очереди и рассматривает ее 4 соседей. сосед обрабатывается только если:
+			1. он лежит в реальных границах матрицы;
+			2. это земля.
 
 	-- ВРЕМЕННАЯ СЛОЖНОСТЬ --
+	Пусть R = rows, C = columns.
+
+	1) std::pair<size_t, size_t> FindIslands(...): перебор всех клеток O(R * C);
+
+	2) void BFS(...): каждая клетка push() и pop() из queue не более одного раза за O(1), нахождение соседей за O(1).
+	в худшем случае вся матрица - один цельный остров O(R * C);
+
+	Итог: O(R * C)
 
 	-- ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ --
+	Храниние матрицы field: O(R + 1 * C + 1);
+	queue BFS в худшем случае: O(R * C);
+	Остальные поменные: O(1).
 
+	Итог: O(R * C)
 */
 
 #include <algorithm>
@@ -16,23 +47,11 @@
 #include <vector>
 
 struct IslandContext {
-	explicit IslandContext(size_t size)
-		: visited_(size, false),
-		number_islands_(0),
+	explicit IslandContext()
+		: number_islands_(0),
 		max_island_size_(0) {
 	}
 
-	bool IsVisited(size_t id) const {
-		return visited_[id];
-	}
-
-	size_t CountId(int columns, int x, int y) const {
-		size_t id = static_cast<size_t>(y * columns + x);
-
-		return id;
-	}
-
-	std::vector<bool> visited_;
 	size_t number_islands_;
 	size_t max_island_size_;
 };
@@ -47,14 +66,13 @@ struct Coordinates {
 	int y_;
 };
 
-void BFS(IslandContext& island_context, const std::vector<std::vector<int>>& field, int x, int y) {
+void BFS(IslandContext& island_context, std::vector<std::vector<int>>& field, int x, int y) {
 	std::queue<Coordinates> queue;
 	size_t island_size = 0;
 
 	queue.push(Coordinates(x, y));
 
-	size_t current_id = island_context.CountId((int)field[y].size() - 1, x, y - 1);
-	island_context.visited_[current_id] = true;
+	field[y][x] = 0;
 
 	while (!queue.empty()) {
 		auto current = queue.front();
@@ -62,28 +80,21 @@ void BFS(IslandContext& island_context, const std::vector<std::vector<int>>& fie
 
 		++island_size;
 
-		static const std::array<Coordinates, 4> dir = {
+		static const std::array<Coordinates, 4> steps = {
 			Coordinates(-1, 0),
 			Coordinates(1, 0),
 			Coordinates(0, -1),
 			Coordinates(0, 1)
 		};
 
-		for (size_t dir_idx = 0; dir_idx < dir.size(); ++dir_idx) {
-			int nx = current.x_ + dir[dir_idx].x_;
-			int ny = current.y_ + dir[dir_idx].y_;
+		for (size_t dir_idx = 0; dir_idx < steps.size(); ++dir_idx) {
+			int nx = current.x_ + steps[dir_idx].x_;
+			int ny = current.y_ + steps[dir_idx].y_;
 
-			if (ny > 0 && ny < (int)field.size() &&
-				nx > 0 && nx < (int)field[ny].size() &&
-				field[ny][nx] != 0) {
+			if (ny > 0 && ny < (int)field.size() && nx > 0 && nx < (int)field[ny].size() && field[ny][nx] != 0) {
+				queue.push(Coordinates(nx, ny));
 
-				size_t id = island_context.CountId((int)field[ny].size() - 1, nx, ny - 1);
-
-				if (!island_context.IsVisited(id)) {
-					queue.push(Coordinates(nx, ny));
-
-					island_context.visited_[id] = true;
-				}
+				field[ny][nx] = 0;
 			}
 		}
 	}
@@ -91,12 +102,13 @@ void BFS(IslandContext& island_context, const std::vector<std::vector<int>>& fie
 	island_context.max_island_size_ = std::max(island_size, island_context.max_island_size_);
 }
 
-std::pair<size_t, size_t> FindIslands(IslandContext& island_context, const std::vector<std::vector<int>>& field) {
+std::pair<size_t, size_t> FindIslands(std::vector<std::vector<int>>& field) {
+	IslandContext island_context;
+
 	for (int y = 1; y < (int)field.size(); ++y) {
 		for (int x = 1; x < (int)field[y].size(); ++x) {
-			size_t id = island_context.CountId((int)field[y].size() - 1, x, y - 1);
 
-			if (field[y][x] == 0 || island_context.visited_[id]) {
+			if (field[y][x] == 0) {
 				continue;
 			}
 
@@ -120,9 +132,7 @@ void Solution(size_t rows, size_t columns) {
 		}
 	}
 
-	IslandContext island_context(rows * columns + 1);
-
-	auto [number_islands, max_island_size] = FindIslands(island_context, field);
+	auto [number_islands, max_island_size] = FindIslands(field);
 
 	std::cout << number_islands << ' ' << max_island_size << '\n';
 }
