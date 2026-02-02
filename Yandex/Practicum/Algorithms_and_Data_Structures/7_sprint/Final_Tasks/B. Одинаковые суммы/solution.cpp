@@ -3,29 +3,28 @@
 	На вход подаются очки, считаю сумму всех очков total. Если total нечетная, то разбить на две одинаковые части
 	нельзя.
 
-	Иначе ищу, можно ли набрать сумму half = total / 2; В dp_achievable считаю, какие суммы достижимы из i поинтов.
-	Считаю что 0 достижим, dp_achievable[0] = true;
-		
-	Для каждого points[i] обновляю dp_achievable в обратном порядке от half до 0: если dp_achievable[j] == true, то
-	next_sum = points[i] + j, если next_sum <= half -> dp_achievable[next_sum] = true; Предусматриваю ранний выход:
-	next_sum == half, то return true;
+	Иначе ищу, можно ли набрать сумму half = total / 2; В dp_achievable считаю, какие суммы достижимы после обработки 
+	первых i элементов массива points. Считаю что 0 достижим, dp_achievable[0] = true;
+
+	Для каждого points[i] обновляю dp_achievable в обратном порядке перебирая j от half - points[i] до 0: если 
+	dp_achievable[j] == true, то делаю next_sum = points[i] + j и ставлю dp_achievable[next_sum] = true; Предусматриваю 
+	ранний выход: next_sum == half, то return true;
 
 	Обратный проход нужен, чтобы каждый поинт не использовался несколько раз. В конце возвращаю dp_achievable[half];
 
 	-- ДОКАЗАТЕЛЬСТВО КОРРЕКТНОСТИ --
-	Инвариант: dp_achievable[j] хранит булево, достижима ли сумма j, используя некоторое подмножество из первых i 
+	Инвариант: dp_achievable[j] хранит булево, достижима ли сумма j, используя некоторое подмножество из первых i
 	обработанных элементов массива points.
 
 	Базовый случай: до обработки любых очков, достижимо только dp_achievable[0] == true, остальные false.
-	
-	Если сумма j была достижима до добавления points[i], то points[i] + j станет достижимой после. По j нужно проходить 
+
+	Если сумма j была достижима до добавления points[i], то points[i] + j станет достижимой после. По j нужно проходить
 	в обратном порядке, чтобы не использовать points[i] несколько раз при достижении новой суммы.
 
-	Рассматриваю суммы только до half, как только half достижима, возвращаю true.
+	Рассматриваю суммы только до j <= half - points[i], как только half достижима, возвращаю true.
 
 	-- ВРЕМЕННАЯ СЛОЖНОСТЬ --
-	Пусть P = points.size(), H = половина от общей суммы, которую должен достичь 
-	half = total / 2 (dp_achievable.size()).
+	Пусть P = points.size(), H = half = total / 2 (dp_achievable.size()).
 
 	Итог: O(P * H).
 
@@ -50,7 +49,7 @@ bool HasEqualSubsetPartition(const std::vector<int>& points, int total) {
 	dp_achievable[0] = true;
 
 	for (int i = 0; i < static_cast<int>(points.size()); ++i) {
-		for (int j = half; j >= 0; --j) {
+		for (int j = half - points[i]; j >= 0; --j) {
 
 			if (!dp_achievable[j]) {
 				continue;
@@ -58,13 +57,11 @@ bool HasEqualSubsetPartition(const std::vector<int>& points, int total) {
 
 			int next_sum = points[i] + j;
 
-			if (next_sum <= half) {
-				if (next_sum == half) {
-					return true;
-				}
-
-				dp_achievable[next_sum] = true;
+			if (next_sum == half) {
+				return true;
 			}
+
+			dp_achievable[next_sum] = true;
 		}
 	}
 
