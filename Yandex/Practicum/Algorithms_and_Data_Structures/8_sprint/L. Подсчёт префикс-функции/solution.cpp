@@ -9,7 +9,7 @@ std::vector<size_t> PrefixFunctionKMP(const std::string& pattern) {
 						 суммарно откатов (0 <= k = pi[k - 1] <= n) = O(n).
 
 						 Итог: O(2n) = O(n).
-		Memory Complexity: O(l).
+		Memory Complexity: O(n).
 	*/
 	size_t n = pattern.length();
 	std::vector<size_t> pi(n, 0);
