@@ -5,12 +5,12 @@
 
 struct Node {
 	std::unordered_map<char, size_t> children_;
-	bool is_terminal = false;
+	bool is_terminal_ = false;
 };
 
 struct Trie {
-	explicit Trie() {
-		trie_.reserve(10'001);
+	explicit Trie(size_t size) {
+		trie_.reserve(size);
 		trie_.emplace_back();
 	}
 
@@ -32,10 +32,10 @@ struct Trie {
 			}
 		}
 
-		trie_[node_idx].is_terminal = true;
+		trie_[node_idx].is_terminal_ = true;
 	}
 
-	bool IsPossibleSplitText(const std::string& text) {
+	bool IsPossibleSplitText(const std::string& text) const {
 		std::vector<bool> reachable(text.size() + 1, false);
 		reachable[0] = true;
 
@@ -54,7 +54,7 @@ struct Trie {
 					node_idx = it->second;
 				}
 
-				if (trie_[node_idx].is_terminal == true) {
+				if (trie_[node_idx].is_terminal_ == true) {
 					reachable[j + 1] = true;
 				}
 			}
@@ -75,7 +75,7 @@ void Solution() {
 	size_t n;
 	std::cin >> n;
 
-	Trie trie;
+	Trie trie(n * 100 + 1);
 
 	for (size_t i = 0; i < n; ++i) {
 		std::string word;
